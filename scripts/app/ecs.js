@@ -96,7 +96,7 @@ define(function () {
         for(var i = 0; i < entities.length; i++) {
           currentEntity = entities[i];
           if(typeof currentEntity.components.CSSModel != "undefined") {
-            $('body').append('<div id="cube" class="animate" data-entity="'+currentEntity.id+'"><div></div><div></div><div></div><div></div><div></div><div></div></div>')
+            $('body').append('<div id="'+currentEntity.components.CSSModel.type+'" class="animate" data-entity="'+currentEntity.id+'"><div></div><div></div><div></div><div></div><div></div><div></div></div>')
           }
         }
       },
