@@ -39,6 +39,11 @@ define(function () {
         this.value = value;
         return this;
       },
+      TakesDamage : function(multiplier){
+        this.name = 'TakesDamage';
+        this.multiplier = multiplier;
+        return this;
+      },
       Position : function(x,y) {
         this.name = 'Position';
         this.x = x;
@@ -49,9 +54,16 @@ define(function () {
         this.name = 'PlayerControlled';
         return this;
       },
+      //This model component is mean to handle data of the form
+      //[{x, y, z, rgba}, {x, y, z, rgba}, {x, y, z, rgba}, ... ]
       Model : function(modelData) {
-        this.name = '3dModel';
+        this.name = 'Model';
         this.data = modelData;
+        return this;
+      },
+      CSSModel : function(type) {
+        this.name = "CSSModel";
+        this.type = type;
         return this;
       }
     },
@@ -60,6 +72,8 @@ define(function () {
       render : function(entities) {
         var c=document.getElementById("myCanvas");
         var ctx=c.getContext("2d");
+        var canvasData = ctx.getImageData(0, 0, c.width, c.height);
+
         ctx.clearRect ( 0 , 0 , c.width, c.height );
 
         for(var i = 0; i < entities.length; i++) {
@@ -67,7 +81,36 @@ define(function () {
           if(typeof currentEntity.components.Position != "undefined") {
             var x = currentEntity.components.Position.x;
             var y = currentEntity.components.Position.y;
-            ctx.fillRect(x,y,150,100);
+            var imageData = ctx.createImageData(1,1);
+            var d  = imageData.data;
+            d[0]   = 0;
+            d[1]   = 1;
+            d[2]   = 0;
+            d[3]   = 255;
+            ctx.putImageData( imageData, x, y );
+          }
+        }
+      },
+
+      renderCSSModel : function(entities) {
+        for(var i = 0; i < entities.length; i++) {
+          currentEntity = entities[i];
+          if(typeof currentEntity.components.CSSModel != "undefined") {
+            $('body').append('<div id="cube" class="animate" data-entity="'+currentEntity.id+'"><div></div><div></div><div></div><div></div><div></div><div></div></div>')
+          }
+        }
+      },
+
+      positionCSSModel : function(entities) {
+        for(var i = 0; i < entities.length; i++) {
+          currentEntity = entities[i];
+          if(typeof currentEntity.components.CSSModel != "undefined") {
+            var x = currentEntity.components.Position.x;
+            var y = currentEntity.components.Position.y;
+            $('[data-entity="'+currentEntity.id+'"]').css({
+              top: y-50,
+              left:x-970
+            });
           }
         }
       },
@@ -81,7 +124,32 @@ define(function () {
             currentEntity.components.Position.y = window.userClickY;
           }
         }
-      }
+      },
+
+      collision : function(entities) {
+        var currentEntity;
+        window.currentPlayerPosition = window.currentPlayerPosition || {};
+        for(var i = 0; i < entities.length; i++) {
+          currentEntity = entities[i];
+
+          //Find where player entity currently is, so we can compare it with all other entities as we loop through them
+          if(typeof currentEntity.components.PlayerControlled != "undefined") {
+            currentPlayerPosition.x = currentEntity.components.Position.x;
+            currentPlayerPosition.y = currentEntity.components.Position.y;
+          } else {
+            //If the player entity and another entity are within 100px of eachother, fire impact event.
+            var xDistFromPlayer = Math.abs(currentEntity.components.Position.x - currentPlayerPosition.x);
+            var yDistFromPlayer = Math.abs(currentEntity.components.Position.y - currentPlayerPosition.y);
+            if(xDistFromPlayer < 100 && yDistFromPlayer < 100) {
+              console.log('impact')
+            }
+          }
+        }
+      },
+
+      damage : function(entities) {
+      
+      },
     },
 
     getEntitiesCount : function() {

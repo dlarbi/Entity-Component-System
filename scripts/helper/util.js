@@ -1,6 +1,6 @@
 define(function () {
   return {
-    listenMouseClicks: function() {
+    mouseInputOn: function() {
       window.userClickX = 0;
       window.userClickY = 0;
       function updateMousePosition(evt) {

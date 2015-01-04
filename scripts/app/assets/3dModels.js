@@ -1,5 +1,21 @@
 define(function () {
   return {
+    cssCube : function() {
+      return 'cube';
+    },
+
+    singlePixel : function(x,y,z) {
+      var pixels = [
+        {
+          x:x,
+          y:y,
+          z:z,
+          color:[0, 1, 0, 255]
+        }
+      ];
+      return pixels;
+    },
+
     getPlayerModel : function() {
       var pixels = [];
       for (var x = -150; x < 150; x+=5) {
