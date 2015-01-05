@@ -1,6 +1,4 @@
 define(function () {
-  var APP;
-
   return {
     init : function(APP) {
       this.APP = APP;
