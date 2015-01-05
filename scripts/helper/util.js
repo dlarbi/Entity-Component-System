@@ -12,9 +12,11 @@ define(function () {
         updateMousePosition(evt);
       }, false);
     },
+
     keyboardInputOn: function() {
       window.userInputX = 0;
       window.userInputY = 0;
+      window.userInputZ = 1;
       document.onkeydown = checkKey;
 
       function checkKey(e) {
@@ -38,24 +40,6 @@ define(function () {
         }
 
       }
-    },
-    findDuplicates : function(arr) {
-      var i,
-      len=arr.length,
-      out=[],
-      obj={};
-
-      for (i=0;i<len;i++) {
-        if (obj[arr[i]] != null) {
-          if (!obj[arr[i]]) {
-            out.push(arr[i]);
-            obj[arr[i]] = 1;
-          }
-        } else {
-          obj[arr[i]] = 0;
-        }
-      }
-      return out;
     }
   };
 });

@@ -3,7 +3,7 @@ define(function () {
   ECS.Entities = {};
   ECS.Entities.count = 0;
   //Whenever you want to know which entity the player is.  This comes in handy a lot.
-  ECS.Entities.PlayerEntityId = 0;
+  ECS.Entities.Player = 0;
 
   return {
     Entity : function() {
@@ -37,7 +37,7 @@ define(function () {
     Components : {
       Health : function(value) {
         this.name = 'Health';
-        value = value || 20;
+        var value = value || 20;
         this.value = value;
         return this;
       },
@@ -46,10 +46,11 @@ define(function () {
         this.multiplier = multiplier;
         return this;
       },
-      Position : function(x,y) {
+      Position : function(x,y,z) {
         this.name = 'Position';
         this.x = x;
         this.y = y;
+        this.z = z;
         return this;
       },
       PlayerControlled : function(player) {
@@ -75,8 +76,21 @@ define(function () {
         this.name = "Collides";
         return this;
       },
-      RandomWalker : function() {
+      RandomWalker : function(stepSize) {
         this.name = "RandomWalker";
+        this.stepSize = stepSize;
+        return this;
+      },
+      Attacker : function(ECS, Models) {
+        this.name = "Attacker";
+        this.ECS = ECS;
+        this.Models = Models;
+        return this;
+      },
+      Bullet : function() {
+        this.name = "Bullet";
+        var timer = timer || 50;
+        this.timer = timer;
         return this;
       }
     },
@@ -109,7 +123,10 @@ define(function () {
         for(var i = 0; i < entities.length; i++) {
           currentEntity = entities[i];
           if(typeof currentEntity.components.CSSModel != "undefined") {
-            $('body').append('<div id="'+currentEntity.components.CSSModel.type+'" class="animate" data-entity="'+currentEntity.id+'"><div></div><div></div><div></div><div></div><div></div><div></div></div>')
+            //dont render the same element if it exists
+            if(!$('[data-entity="'+currentEntity.id+'"]').length) {
+              $('body').append('<div id="'+currentEntity.components.CSSModel.type+'" class="" data-entity="'+currentEntity.id+'"><div></div><div></div><div></div><div></div><div></div><div></div></div>')
+            }
           }
         }
       },
@@ -120,10 +137,23 @@ define(function () {
           if(typeof currentEntity.components.CSSModel != "undefined") {
             var x = currentEntity.components.Position.x;
             var y = currentEntity.components.Position.y;
+            var z = currentEntity.components.Position.z;
+
             $('[data-entity="'+currentEntity.id+'"]').css({
               top: y,
               left:x
             });
+
+            /*
+            //We could maybe add jumping to our little cube game with this.  An entity's Z changes and it would scale
+            $('[data-entity="'+currentEntity.id+'"]').css({
+              '-webkit-transform' : 'scale(' + z + ')',
+              '-moz-transform'    : 'scale(' + z + ')',
+              '-ms-transform'     : 'scale(' + z + ')',
+              '-o-transform'      : 'scale(' + z + ')',
+              'transform'         : 'scale(' + z + ')'
+            });
+            */
           }
         }
       },
@@ -135,20 +165,17 @@ define(function () {
           if(typeof currentEntity.components.PlayerControlled != "undefined") {
             currentEntity.components.Position.x = window.userInputX;
             currentEntity.components.Position.y = window.userInputY;
+            currentEntity.components.Position.z = window.userInputZ;
           }
         }
       },
 
       collisionDetection : function(entities) {
         var currentEntity;
-        window.currentPlayerPosition = window.currentPlayerPosition || {};
         for(var i = 0; i < entities.length; i++) {
           currentEntity = entities[i];
-
-          //Find where player entity currently is, so we can compare it with all other entities as we loop through them
-
           if(typeof currentEntity.components.Collides != "undefined"){
-            //If the player entity and another entity are within 100px of eachother, fire impact event.
+            //If the player entity and another entity are within 100px of eachother, fire playerCollision event.
             var xDistFromPlayer = Math.abs(currentEntity.components.Position.x - ECS.Entities.Player.components.Position.x);
             var yDistFromPlayer = Math.abs(currentEntity.components.Position.y - ECS.Entities.Player.components.Position.y);
             if(xDistFromPlayer < 100 && yDistFromPlayer < 100) {
@@ -166,25 +193,74 @@ define(function () {
             currentEntity = entities[i];
             if(typeof currentEntity.components.RandomWalker != "undefined") {
               var plusOrMinus = Math.random() < 0.5 ? -1 : 1;
-              if(currentEntity.components.Position.x + plusOrMinus*80 < 1840 && currentEntity.components.Position.x + plusOrMinus*80 > 0) {
-                currentEntity.components.Position.x+=(plusOrMinus*80);
+              var stepSize = currentEntity.components.RandomWalker.stepSize;
+              if(currentEntity.components.Position.x + plusOrMinus*stepSize < 1840 && currentEntity.components.Position.x + plusOrMinus*stepSize > 0) {
+                currentEntity.components.Position.x+=(plusOrMinus*stepSize);
               }
 
               plusOrMinus = Math.random() < 0.5 ? -1 : 1;
-              if(currentEntity.components.Position.y + plusOrMinus*80 < 900 && currentEntity.components.Position.y + plusOrMinus*80 > 0) {
-                currentEntity.components.Position.y+=(plusOrMinus*80);
+              if(currentEntity.components.Position.y + plusOrMinus*stepSize < 900 && currentEntity.components.Position.y + plusOrMinus*stepSize > 0) {
+                currentEntity.components.Position.y+=(plusOrMinus*stepSize);
               }
             }
           }
       },
 
+      attackDetection : function(entities) {
+        var currentEntity;
+        for(var i = 0; i < entities.length; i++) {
+          currentEntity = entities[i];
+          if(typeof currentEntity.components.Attacker != "undefined") {
+            $(window).trigger('attack', [currentEntity]);
+          }
+        }
+      },
+
+      bullets : function(entities) {
+        var currentEntity;
+        for(var i = 0; i < entities.length; i++) {
+          currentEntity = entities[i];
+          if(typeof currentEntity.components.Bullet != "undefined") {
+            if(typeof currentEntity.components.Bullet.destination == "undefined") {
+              currentEntity.components.Bullet.destination = {x:ECS.Entities.Player.components.Position.x, y:ECS.Entities.Player.components.Position.y}
+            }
+            currentEntity.components.Bullet.timer--;
+            //console.log(currentEntity.components.Bullet.destination.x)
+
+            if(currentEntity.components.Bullet.timer <= 0) {
+              $('[data-entity="'+currentEntity.id+'"]').remove();
+              delete(_.where(window.entityArray, {'id': currentEntity.id}))
+            }
+          }
+        }
+
+        console.log(window.entityArray.length)
+      },
+
       Observers : {
         impactListener : function() {
-          playerImpact = function(evt, collidedWithEntity) {
+          var playerImpact = function(evt, collidedWithEntity) {
             console.log('Player Entity: ' + ECS.Entities.Player.id, 'Collided with Entity: ' + collidedWithEntity.id);
             ECS.Entities.Player.components.Health.value = ECS.Entities.Player.components.Health.value - 1;
           }
           $(window).on('playerCollision', playerImpact);
+        },
+        attackListener : function() {
+          function attackPlayer(evt, attackingEntity) {
+
+            //Right now this ECS.Entity is one namespaced to the attacking entity.  Looks horrid.  Should we pass a more global reference to ECS in from main.js?  Probably. Idk.  Will think.
+            var bullet = new attackingEntity.components.Attacker.ECS.Entity();
+            bullet.addComponent(new attackingEntity.components.Attacker.ECS.Components.Position(attackingEntity.components.Position.x, attackingEntity.components.Position.y, 1));
+            bullet.addComponent(new attackingEntity.components.Attacker.ECS.Components.CSSModel(attackingEntity.components.Attacker.Models.cssCube()));
+            bullet.addComponent(new attackingEntity.components.Attacker.ECS.Components.Collides());
+            bullet.addComponent(new attackingEntity.components.Attacker.ECS.Components.RandomWalker(100)); //RandomWalker initialized with stepSize;
+            bullet.addComponent(new attackingEntity.components.Attacker.ECS.Components.Bullet());
+            window.entityArray.push(bullet)
+            attackingEntity.components.Attacker.ECS.Systems.renderCSSModel(entityArray);
+
+          }
+          var throttledAttack = _.throttle(attackPlayer, 3000)
+          $(window).on('attack', throttledAttack);
         }
       },
 
