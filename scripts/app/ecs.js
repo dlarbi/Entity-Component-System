@@ -2,6 +2,8 @@ define(function () {
   ECS = {};
   ECS.Entities = {};
   ECS.Entities.count = 0;
+  //Whenever you want to know which entity the player is.  This comes in handy a lot.
+  ECS.Entities.PlayerEntityId = 0;
 
   return {
     Entity : function() {
@@ -50,8 +52,11 @@ define(function () {
         this.y = y;
         return this;
       },
-      PlayerControlled : function() {
+      PlayerControlled : function(player) {
         this.name = 'PlayerControlled';
+        if(typeof player != "undefined") {
+          ECS.Entities.Player = player;
+        }
         return this;
       },
       //This model component is mean to handle data of the form
@@ -64,6 +69,14 @@ define(function () {
       CSSModel : function(type) {
         this.name = "CSSModel";
         this.type = type;
+        return this;
+      },
+      Collides : function() {
+        this.name = "Collides";
+        return this;
+      },
+      RandomWalker : function() {
+        this.name = "RandomWalker";
         return this;
       }
     },
@@ -96,7 +109,7 @@ define(function () {
         for(var i = 0; i < entities.length; i++) {
           currentEntity = entities[i];
           if(typeof currentEntity.components.CSSModel != "undefined") {
-            $('body').append('<div id="cube" class="animate" data-entity="'+currentEntity.id+'"><div></div><div></div><div></div><div></div><div></div><div></div></div>')
+            $('body').append('<div id="'+currentEntity.components.CSSModel.type+'" class="animate" data-entity="'+currentEntity.id+'"><div></div><div></div><div></div><div></div><div></div><div></div></div>')
           }
         }
       },
@@ -108,8 +121,8 @@ define(function () {
             var x = currentEntity.components.Position.x;
             var y = currentEntity.components.Position.y;
             $('[data-entity="'+currentEntity.id+'"]').css({
-              top: y-50,
-              left:x-970
+              top: y,
+              left:x
             });
           }
         }
@@ -120,36 +133,61 @@ define(function () {
         for(var i = 0; i < entities.length; i++) {
           currentEntity = entities[i];
           if(typeof currentEntity.components.PlayerControlled != "undefined") {
-            currentEntity.components.Position.x = window.userClickX;
-            currentEntity.components.Position.y = window.userClickY;
+            currentEntity.components.Position.x = window.userInputX;
+            currentEntity.components.Position.y = window.userInputY;
           }
         }
       },
 
-      collision : function(entities) {
+      collisionDetection : function(entities) {
         var currentEntity;
         window.currentPlayerPosition = window.currentPlayerPosition || {};
         for(var i = 0; i < entities.length; i++) {
           currentEntity = entities[i];
 
           //Find where player entity currently is, so we can compare it with all other entities as we loop through them
-          if(typeof currentEntity.components.PlayerControlled != "undefined") {
-            currentPlayerPosition.x = currentEntity.components.Position.x;
-            currentPlayerPosition.y = currentEntity.components.Position.y;
-          } else {
+
+          if(typeof currentEntity.components.Collides != "undefined"){
             //If the player entity and another entity are within 100px of eachother, fire impact event.
-            var xDistFromPlayer = Math.abs(currentEntity.components.Position.x - currentPlayerPosition.x);
-            var yDistFromPlayer = Math.abs(currentEntity.components.Position.y - currentPlayerPosition.y);
+            var xDistFromPlayer = Math.abs(currentEntity.components.Position.x - ECS.Entities.Player.components.Position.x);
+            var yDistFromPlayer = Math.abs(currentEntity.components.Position.y - ECS.Entities.Player.components.Position.y);
             if(xDistFromPlayer < 100 && yDistFromPlayer < 100) {
-              console.log('impact')
+              $(window).trigger('playerCollision', [currentEntity]);
             }
           }
         }
       },
 
-      damage : function(entities) {
-      
+      randomWalking : function(entities) {
+          //Adds a random X and a random Y value to the position of any entity with the RandomWalker component
+          //Doesn't let it walk out of bounds
+          var currentEntity;
+          for(var i = 0; i < entities.length; i++) {
+            currentEntity = entities[i];
+            if(typeof currentEntity.components.RandomWalker != "undefined") {
+              var plusOrMinus = Math.random() < 0.5 ? -1 : 1;
+              if(currentEntity.components.Position.x + plusOrMinus*80 < 1840 && currentEntity.components.Position.x + plusOrMinus*80 > 0) {
+                currentEntity.components.Position.x+=(plusOrMinus*80);
+              }
+
+              plusOrMinus = Math.random() < 0.5 ? -1 : 1;
+              if(currentEntity.components.Position.y + plusOrMinus*80 < 900 && currentEntity.components.Position.y + plusOrMinus*80 > 0) {
+                currentEntity.components.Position.y+=(plusOrMinus*80);
+              }
+            }
+          }
       },
+
+      Observers : {
+        impactListener : function() {
+          playerImpact = function(evt, collidedWithEntity) {
+            console.log('Player Entity: ' + ECS.Entities.Player.id, 'Collided with Entity: ' + collidedWithEntity.id);
+            ECS.Entities.Player.components.Health.value = ECS.Entities.Player.components.Health.value - 1;
+          }
+          $(window).on('playerCollision', playerImpact);
+        }
+      },
+
     },
 
     getEntitiesCount : function() {
