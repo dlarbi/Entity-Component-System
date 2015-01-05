@@ -4,6 +4,10 @@ define(function () {
       return 'cube';
     },
 
+    cssCoin : function() {
+      return 'coin';
+    },
+
     singlePixel : function(x,y,z) {
       var pixels = [
         {

@@ -92,6 +92,12 @@ define(function () {
         var timer = timer || 50;
         this.timer = timer;
         return this;
+      },
+      Coin : function() {
+        this.name = "Coin";
+        var value = value || 5;
+        this.value = value;
+        return this;
       }
     },
 
@@ -125,7 +131,13 @@ define(function () {
           if(typeof currentEntity.components.CSSModel != "undefined") {
             //dont render the same element if it exists
             if(!$('[data-entity="'+currentEntity.id+'"]').length) {
-              $('body').append('<div id="'+currentEntity.components.CSSModel.type+'" class="" data-entity="'+currentEntity.id+'"><div></div><div></div><div></div><div></div><div></div><div></div></div>')
+              var type = currentEntity.components.CSSModel.type;
+              if(type == 'coin') {
+                $('body').append('<div id="'+currentEntity.components.CSSModel.type+'" class="animate" data-entity="'+currentEntity.id+'"></div>')
+
+              } else {
+                  $('body').append('<div id="'+currentEntity.components.CSSModel.type+'" class="" data-entity="'+currentEntity.id+'"><div></div><div></div><div></div><div></div><div></div><div></div></div>')
+              }
             }
           }
         }
@@ -185,6 +197,7 @@ define(function () {
         }
       },
 
+
       randomWalking : function(entities) {
           //Adds a random X and a random Y value to the position of any entity with the RandomWalker component
           //Doesn't let it walk out of bounds
@@ -235,34 +248,9 @@ define(function () {
         }
 
         console.log(window.entityArray.length)
-      },
+      }
 
-      Observers : {
-        impactListener : function() {
-          var playerImpact = function(evt, collidedWithEntity) {
-            console.log('Player Entity: ' + ECS.Entities.Player.id, 'Collided with Entity: ' + collidedWithEntity.id);
-            ECS.Entities.Player.components.Health.value = ECS.Entities.Player.components.Health.value - 1;
-          }
-          $(window).on('playerCollision', playerImpact);
-        },
-        attackListener : function() {
-          function attackPlayer(evt, attackingEntity) {
 
-            //Right now this ECS.Entity is one namespaced to the attacking entity.  Looks horrid.  Should we pass a more global reference to ECS in from main.js?  Probably. Idk.  Will think.
-            var bullet = new attackingEntity.components.Attacker.ECS.Entity();
-            bullet.addComponent(new attackingEntity.components.Attacker.ECS.Components.Position(attackingEntity.components.Position.x, attackingEntity.components.Position.y, 1));
-            bullet.addComponent(new attackingEntity.components.Attacker.ECS.Components.CSSModel(attackingEntity.components.Attacker.Models.cssCube()));
-            bullet.addComponent(new attackingEntity.components.Attacker.ECS.Components.Collides());
-            bullet.addComponent(new attackingEntity.components.Attacker.ECS.Components.RandomWalker(100)); //RandomWalker initialized with stepSize;
-            bullet.addComponent(new attackingEntity.components.Attacker.ECS.Components.Bullet());
-            window.entityArray.push(bullet)
-            attackingEntity.components.Attacker.ECS.Systems.renderCSSModel(entityArray);
-
-          }
-          var throttledAttack = _.throttle(attackPlayer, 3000)
-          $(window).on('attack', throttledAttack);
-        }
-      },
 
     },
 

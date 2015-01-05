@@ -6,49 +6,56 @@ requirejs.config({
     assets: 'app/assets'
   }
 });
-require(["helper/util", "app/ecs", "assets/3dModels"], function(Utilities, ECS, Models) {
+require(["helper/util","app/ecs", "app/observers", "assets/3dModels"], function(Utilities, APP, Observers, Models) {
 
   Utilities.mouseInputOn();
   Utilities.keyboardInputOn();
-  var player = new ECS.Entity();
-  var enemy = new ECS.Entity();
-  var enemy2 = new ECS.Entity();
+  var player = new APP.Entity();
+  var enemy = new APP.Entity();
+  var enemy2 = new APP.Entity();
 
-  player.addComponent(new ECS.Components.Health());
-  player.addComponent(new ECS.Components.Position(1, 2, 1));
-  player.addComponent(new ECS.Components.PlayerControlled(player));
-  player.addComponent(new ECS.Components.CSSModel(Models.cssCube()));
-
-
-  enemy.addComponent(new ECS.Components.Health());
-  enemy.addComponent(new ECS.Components.Position(600, 300, 1));
-  enemy.addComponent(new ECS.Components.CSSModel(Models.cssCube()));
-  enemy.addComponent(new ECS.Components.Collides());
-  enemy.addComponent(new ECS.Components.RandomWalker(100)); //RandomWalker initialized with stepSize;
+  player.addComponent(new APP.Components.Health());
+  player.addComponent(new APP.Components.Position(1, 2, 1));
+  player.addComponent(new APP.Components.PlayerControlled(player));
+  player.addComponent(new APP.Components.CSSModel(Models.cssCube()));
 
 
-  enemy2.addComponent(new ECS.Components.Health());
-  enemy2.addComponent(new ECS.Components.Position(900, 300, 1));
-  enemy2.addComponent(new ECS.Components.CSSModel(Models.cssCube()));
-  enemy2.addComponent(new ECS.Components.Collides());
-  //enemy2.addComponent(new ECS.Components.Attacker(ECS, Models)); //We pass ECS  and models so we can create new entities and components for bullets/arrows/etc within our attack methods
+  enemy.addComponent(new APP.Components.Health());
+  enemy.addComponent(new APP.Components.Position(600, 300, 1));
+  enemy.addComponent(new APP.Components.CSSModel(Models.cssCube()));
+  enemy.addComponent(new APP.Components.Collides());
+  enemy.addComponent(new APP.Components.RandomWalker(100)); //RandomWalker initialized with stepSize;
 
-  window.entityArray = [player, enemy, enemy2];
+  var coin = new APP.Entity();
+  coin.addComponent(new APP.Components.Position(100, 200, 1));
+  coin.addComponent(new APP.Components.CSSModel(Models.cssCoin()));
+  coin.addComponent(new APP.Components.Collides());
+  coin.addComponent(new APP.Components.Coin());
 
-  ECS.Systems.renderCSSModel(entityArray); //We render CSS models once, outside of game loop.  Only update positions and rotations in game loop.
+  enemy2.addComponent(new APP.Components.Health());
+  enemy2.addComponent(new APP.Components.Position(900, 300, 1));
+  enemy2.addComponent(new APP.Components.CSSModel(Models.cssCube()));
+  enemy2.addComponent(new APP.Components.Collides());
+  //enemy2.addComponent(new APP.Components.Attacker(APP, Models)); //We pass APP  and models so we can create new entities and components for bullets/arrows/etc within our attack methods
+
+  window.entityArray = [player, enemy, enemy2, coin];
+
+  APP.Systems.renderCSSModel(entityArray); //We render CSS models once, outside of game loop.  Only update positions and rotations in game loop.
 
   //We handle impacts by observing collision events with the player object.
-  ECS.Systems.Observers.impactListener();
-  ECS.Systems.Observers.attackListener();
+  //The collision events are fired by APP.Systems like attackDetection() and collisionDetection()
+  Observers.init(APP);
+  Observers.impactListener();
+  Observers.attackListener();
   setInterval(function() {
-    ECS.Systems.userInput(entityArray);
-    //ECS.Systems.bullets(entityArray);
-    ECS.Systems.attackDetection(entityArray);
-    ECS.Systems.randomWalking(entityArray);
+    APP.Systems.userInput(entityArray);
+    //APP.Systems.bullets(entityArray);
+    APP.Systems.attackDetection(entityArray);
+    APP.Systems.randomWalking(entityArray);
 
-    ECS.Systems.collisionDetection(entityArray);
-    ECS.Systems.positionCSSModel(entityArray);
-    //ECS.Systems.render(entityArray); //This function renders things on the canvas.
+    APP.Systems.collisionDetection(entityArray);
+    APP.Systems.positionCSSModel(entityArray);
+    //APP.Systems.render(entityArray); //This function renders things on the canvas.
   }, 80);
 
 });
