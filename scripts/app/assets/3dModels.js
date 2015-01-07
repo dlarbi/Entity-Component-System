@@ -1,7 +1,18 @@
 define(function () {
   return {
     cssCube : function() {
-      return 'cube';
+      this.modelData = '<div id="cube" class="" data-entity=""><div></div><div></div><div></div><div></div><div></div><div></div></div>';
+      return this;
+    },
+
+    cssCoin : function() {
+      this.modelData = '<div id="coin" class="animate" data-entity=""></div>';
+      return this;
+    },
+
+    cssBullet : function() {
+      this.modelData = '<div class="bullet"></div>';
+      return this;
     },
 
     singlePixel : function(x,y,z) {
