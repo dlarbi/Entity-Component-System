@@ -3,7 +3,11 @@ define(function () {
   ECS.Entities = {};
   ECS.Entities.count = 0;
   //Whenever you want to know which entity the player is.  This comes in handy a lot.
+<<<<<<< HEAD
   ECS.Entities.PlayerEntityId = 0;
+=======
+  ECS.Entities.Player = 0;
+>>>>>>> ad78e136c9a4e71dcdca82095dc9515c6c92b857
 
   return {
     Entity : function() {
