@@ -1,7 +1,7 @@
 define(function () {
   return {
     cssCube : function() {
-      this.modelData = '<div id="cube" class="" data-entity=""><div></div><div></div><div></div><div></div><div></div><div></div></div>';
+      this.modelData = '<div id="cube" class="" data-entity=""><div></div><div></div><div></div><div></div><div></div><div></div><div id="health"></div></div>';
       return this;
     },
 

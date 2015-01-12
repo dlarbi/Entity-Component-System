@@ -290,8 +290,8 @@ define(function () {
             entity1.components = {};
             setTimeout(function() {
               $('[data-entity="'+entity1.id+'"]').remove();
-            }, 340)
-
+            }, 200)
+            ECS.UI.updateEntityHealth(entity2);
             console.log(entity2.components.Health.value)
           }
         }
