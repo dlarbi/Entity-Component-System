@@ -8,6 +8,7 @@ define(function () {
 
     collision : function() {
       $(window).on('playerCollision', APP.Systems.playerImpact);
+      $(window).on('collision', APP.Systems.entityImpact);
     },
 
     attack : function() {

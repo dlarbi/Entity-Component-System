@@ -20,6 +20,10 @@ define(function () {
       }, false);
     },
 
+    FindElementDocumentPosition: function(element) {
+      return element.position();
+    },
+
     keyboardInputOn: function() {
       window.userInputX = 0;
       window.userInputY = 0;
@@ -49,4 +53,6 @@ define(function () {
       }
     }
   };
+
+
 });

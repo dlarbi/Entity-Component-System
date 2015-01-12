@@ -6,11 +6,11 @@ requirejs.config({
     assets: 'app/assets'
   }
 });
-require(["helper/util","app/ecs", "app/observers", "assets/3dModels"], function(Utilities, APP, Observers, Models) {
+require(["helper/util","app/ecs", "app/observers", "assets/3dModels", "app/UI"], function(Utilities, APP, Observers, Models, UI) {
 
   Utilities.mouseInputOn();
   Utilities.keyboardInputOn();
-  APP.initialize(APP, Models);
+  APP.initialize(APP, Models, UI, Utilities);
   var player = new APP.Entity();
   var enemy = new APP.Entity();
   var enemy2 = new APP.Entity();
@@ -20,12 +20,13 @@ require(["helper/util","app/ecs", "app/observers", "assets/3dModels"], function(
   player.addComponent(new APP.Components.PlayerControlled(player));
   player.addComponent(new APP.Components.CSSModel(Models.cssCube()));
   player.addComponent(new APP.Components.Attacker());
+  player.addComponent(new APP.Components.Collides());
 
   enemy.addComponent(new APP.Components.Health());
   enemy.addComponent(new APP.Components.Position(600, 300, 1));
   enemy.addComponent(new APP.Components.CSSModel(Models.cssCube()));
   enemy.addComponent(new APP.Components.Collides());
-  enemy.addComponent(new APP.Components.RandomWalker(100)); //RandomWalker initialized with stepSize;
+ enemy.addComponent(new APP.Components.RandomWalker(20)); //RandomWalker initialized with stepSize;
 
   var coin = new APP.Entity();
   coin.addComponent(new APP.Components.Position(100, 200, 1));
@@ -37,7 +38,7 @@ require(["helper/util","app/ecs", "app/observers", "assets/3dModels"], function(
   enemy2.addComponent(new APP.Components.Position(900, 300, 1));
   enemy2.addComponent(new APP.Components.CSSModel(Models.cssCube()));
   enemy2.addComponent(new APP.Components.Collides());
-//  enemy2.addComponent(new APP.Components.Attacker()); //We pass APP  and models so we can create new entities and components for bullets/arrows/etc within our attack methods
+  //enemy2.addComponent(new APP.Components.Attacker()); //We pass APP  and models so we can create new entities and components for bullets/arrows/etc within our attack methods
 
   window.entityArray = [player, enemy, coin, enemy2];
 
@@ -49,6 +50,7 @@ require(["helper/util","app/ecs", "app/observers", "assets/3dModels"], function(
   Observers.collision();
   Observers.attack();
   setInterval(function() {
+    APP.Systems.death(entityArray);
     APP.Systems.userInput(entityArray);
     APP.Systems.projectiles(entityArray);
     APP.Systems.attackDetection(entityArray);

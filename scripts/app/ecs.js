@@ -7,9 +7,11 @@ define(function () {
 
   return {
     //The references to APP and Models are so we can build entities inside our systems. (Ie creating projectiles in an attack system)
-    initialize : function(APPLICATION, Models) {
+    initialize : function(APPLICATION, Models, UI, Utilities) {
       ECS.APP = APPLICATION;
       ECS.Models = Models;
+      ECS.UI = UI;
+      ECS.Utilities = Utilities;
     },
     Entity : function() {
       this.id = (+new Date()).toString(16) +
@@ -75,10 +77,12 @@ define(function () {
       CSSModel : function(model) {
         this.name = "CSSModel";
         this.model = model.modelData;
+        this.DOMReference = "undefined";
         return this;
       },
       Collides : function() {
         this.name = "Collides";
+        this.damage = 0;
         return this;
       },
       RandomWalker : function(stepSize) {
@@ -95,12 +99,18 @@ define(function () {
         var timer = timer || 50;
         this.destination = {x:x, y:y},
         this.timer = timer;
+        this.damage = 1;
+        this.impactAnimation = '<img class="impactAnimation" src="./images/explode.gif"/>';
         return this;
       },
       Coin : function() {
         this.name = "Coin";
         var value = value || 5;
         this.value = value;
+        return this;
+      },
+      Map : function() {
+        this.name = "Map";
         return this;
       }
     },
@@ -133,14 +143,18 @@ define(function () {
         var el;
         for(var i = 0; i < entities.length; i++) {
           currentEntity = entities[i];
-          if(typeof currentEntity.components.CSSModel != "undefined") {
+          //Render CSSModels but not the World, we handle worlds elsewhere for now
+          if(typeof currentEntity.components.CSSModel != "undefined" && typeof currentEntity.components.Map == "undefined") {
             //dont render the same element if it exists
             if(!$('[data-entity="'+currentEntity.id+'"]').length) {
               var type = currentEntity.components.CSSModel.type;
                 el = $(currentEntity.components.CSSModel.model);
                 el.attr('data-entity', currentEntity.id);
-                $('body').append(el);
+                $('#map').append(el);
             }
+          }
+          if(typeof currentEntity.components.Map != "undefined") {
+            $('#map').attr('data-entity', currentEntity.id)
           }
         }
       },
@@ -167,18 +181,6 @@ define(function () {
                 'transform'         : 'translate('+x+'px,'+y+'px)'
               });
             }
-
-
-            /*
-            //We could maybe add jumping to our little cube game with this.  An entity's Z changes and it would scale
-            $('[data-entity="'+currentEntity.id+'"]').css({
-              '-webkit-transform' : 'translate('+x+'px,'+y+'px)',
-              '-moz-transform'    : 'translate('+x+'px,'+y+'px)',
-              '-ms-transform'     : 'translate('+x+'px,'+y+'px)',
-              '-o-transform'      : 'translate('+x+'px,'+y+'px)',
-              'transform'         : 'translate('+x+'px,'+y+'px)'
-            });
-            */
           }
         }
       },
@@ -191,21 +193,49 @@ define(function () {
             currentEntity.components.Position.x = window.userInputX;
             currentEntity.components.Position.y = window.userInputY;
             currentEntity.components.Position.z = window.userInputZ;
+          } else if(typeof currentEntity.components.Map != "undefined") {
+            currentEntity.components.Position.x = -window.userInputX;
+            currentEntity.components.Position.y = -window.userInputY;
+            currentEntity.components.Position.z = window.userInputZ;
           }
         }
       },
 
       collisionDetection : function(entities) {
         var currentEntity;
+        var otherEntity;
+        var cssPos1;
+        var cssPos2;
         for(var i = 0; i < entities.length; i++) {
           currentEntity = entities[i];
           if(typeof currentEntity.components.Collides != "undefined"){
-            //If the player entity and another entity are within 100px of eachother, fire playerCollision event.
-            var xDistFromPlayer = Math.abs(currentEntity.components.Position.x - ECS.Entities.Player.components.Position.x);
-            var yDistFromPlayer = Math.abs(currentEntity.components.Position.y - ECS.Entities.Player.components.Position.y);
-            if(xDistFromPlayer < 100 && yDistFromPlayer < 100) {
-              $(window).trigger('playerCollision', [currentEntity]);
+
+            for(var j = 0; j < entities.length; j++){
+              otherEntity = entities[j];
+              if(typeof otherEntity.components.Collides != "undefined" && typeof currentEntity.components.Collides != "undefined" && otherEntity.id != currentEntity.id){
+                var xDist = Math.abs(currentEntity.components.Position.x - otherEntity.components.Position.x);
+                var yDist = Math.abs(currentEntity.components.Position.y - otherEntity.components.Position.y);
+                if(xDist < 100 && yDist < 100) {
+                  if(otherEntity.id == ECS.Entities.Player.id) {
+                    $(window).trigger('playerCollision', [currentEntity]);
+                  }
+                  if(currentEntity.id != ECS.Entities.Player.id) {
+                    //We only trigger the collision event when both the system's X & Y positions and the CSS positions are colliding
+                    cssPos1 = ECS.Utilities.FindElementDocumentPosition($('[data-entity="'+currentEntity.id+'"]'));
+                    cssPos2 = ECS.Utilities.FindElementDocumentPosition($('[data-entity="'+otherEntity.id+'"]'));
+                    var xCssDist = Math.abs(cssPos1.left - cssPos2.left);
+                    var yCssDist = Math.abs(cssPos1.top - cssPos2.top);
+                    if(xCssDist < 100 && yCssDist < 100) {
+                      $(window).trigger('collision', [otherEntity, currentEntity]);
+                    }
+
+                  }
+
+                }
+              }
+
             }
+
           }
         }
       },
@@ -239,12 +269,45 @@ define(function () {
           $('[data-entity="'+collidedWithEntity.id+'"]').remove();
           //To destroy an entity, we remove all of its components.  The entities with no components can be cleaned up later.  Must figure this out.
           collidedWithEntity.components = {};
-        } else if(typeof collidedWithEntity.components.Projectile != "undefined") {
+        } else if(typeof collidedWithEntity.components.Projectile != "undefined" || typeof collidedWithEntity.components.Attacker != "undefined") {
           $('[data-entity="'+collidedWithEntity.id+'"]').remove();
           ECS.Entities.Player.components.Health.value-=1;
           collidedWithEntity.components = {};
         }
         console.log('Health: ' + ECS.Entities.Player.components.Health.value)
+        ECS.UI.updatePlayerHealth(ECS.Entities.Player.components.Health.value);
+      },
+
+      entityImpact: function(evt, entity1, entity2) {
+        //This branch represents a projectile entity1 colliding with an entity2 with health
+        if(typeof entity1.components.Projectile != "undefined") {
+          $('[data-entity="'+entity1.id+'"]').css('background', 'none!important');
+          $('[data-entity="'+entity1.id+'"]').html(currentEntity.components.Projectile.impactAnimation);
+
+          if(typeof entity2.components.Health != "undefined") {
+            //console.log(entity1.components.Projectile.damage)
+            entity2.components.Health.value-=entity1.components.Projectile.damage;
+            entity1.components = {};
+            setTimeout(function() {
+              $('[data-entity="'+entity1.id+'"]').remove();
+            }, 340)
+
+            console.log(entity2.components.Health.value)
+          }
+        }
+      },
+
+      death: function(entities){
+        var currentEntity;
+        for(var i = 0; i < entities.length; i++) {
+          currentEntity = entities[i];
+          if(typeof currentEntity.components.Health != "undefined") {
+            if(currentEntity.components.Health.value <= 0) {
+              currentEntity.components = {};
+              $('[data-entity="'+currentEntity.id+'"]').remove();
+            }
+          }
+        }
       },
 
       attack: function(evt, attackingEntity) {
@@ -268,7 +331,7 @@ define(function () {
           window.clickX = 0;
           window.clickY = 0;
         } else {
-          projectile.addComponent(new ECS.APP.Components.Projectile(0, 0));
+          projectile.addComponent(new ECS.APP.Components.Projectile(ECS.Entities.Player.components.Position.x, ECS.Entities.Player.components.Position.y));
         }
 
         window.entityArray.push(projectile)

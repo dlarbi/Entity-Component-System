@@ -1,7 +1,14 @@
 
+html {
+  height:100%;
+}
 body {
-  margin-top: 125px;
+
+height:100%;
+}
+.flatworld {
   background:url('../../../images/bg.jpg');
+
 }
 
 @-moz-keyframes spinningH {
@@ -228,4 +235,9 @@ body {
   -webkit-box-shadow: -2px 10px 183px -6px rgba(0,0,0,0.82);
   -moz-box-shadow: -2px 10px 183px -6px rgba(0,0,0,0.82);
   box-shadow: -2px 10px 183px -6px rgba(0,0,0,0.82);
+}
+.bullet .impactAnimation {
+  width:50px;
+  position:absolute;
+  top:-20px; left:-20px;
 }
