@@ -12,8 +12,8 @@ define(function () {
       }
       window.addEventListener('click', function(e) {
         window.userInputLClick = 1;
-        window.clickX = e.clientX;
-        window.clickY = e.clientY;
+        window.clickX = e.offsetX;
+        window.clickY = e.offsetY;
       }, false);
       window.addEventListener('mousemove', function mouseMove (evt) {
       //  updateMousePosition(evt);
@@ -36,18 +36,18 @@ define(function () {
 
         if (e.keyCode == '38') {
           // up arrow
-          window.userInputY-=20;
+          window.userInputY = -30;
         }
         else if (e.keyCode == '40') {
-          window.userInputY+=20;
+          window.userInputY = 30;
         }
         else if (e.keyCode == '37') {
           // left arrow
-          window.userInputX-=20;
+          window.userInputX = -30;
         }
         else if (e.keyCode == '39') {
           // right arrow
-          window.userInputX+=20;
+          window.userInputX = 30;
         }
 
       }

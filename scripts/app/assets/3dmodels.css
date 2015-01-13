@@ -3,12 +3,58 @@ html {
   height:100%;
 }
 body {
-
+background:url('../../../images/galaxy.jpg');
 height:100%;
+}
+.sorcerer {
+  background:url('../../../images/sorcerer-sprite.png') no-repeat;
+
+  z-index:1;
+  position: fixed;
+  margin: 0 auto;
+  height: 200px;
+  width: 80px;
+  pointer-events:none;
+
+  -webkit-transition  : -webkit-transform .5s, top .15s linear, left .15s linear;
+  -moz-transition     : -moz-transform .5s, top .15s linear, left .15s linear;
+  -o-transition       : -o-transform .5s, top .15s linear, left .15s linear;
+  -ms-transition      : -ms-transform .5s, top .15s linear, left .15s linear;
+  transition          : transform .5s, top .15s linear, left .15s linear;
+
+  -webkit-transform-style : preserve-3d;
+  -moz-transform-style    : preserve-3d;
+  -o-transform-style      : preserve-3d;
+  -ms-transform-style     : preserve-3d;
+  transform-style         : preserve-3d;
 }
 .flatworld {
   background:url('../../../images/bg.jpg');
+  left:45%;
+  top:45%;
+  -webkit-perspective: 5000px;
+  -moz-perspective: 5000px;
+  -o-perspective: 5000px;
+  -ms-perspective: 5000px;
+  perspective: 5000px;
+  overflow: hidden;
+  -webkit-perspective-origin: 50% 50%;
+  -moz-perspective-origin: 50% 50%;
+  -moz-transform-origin: 50% 50%;
+  -o-perspective-origin: 50% 50%;
+  -ms-perspective-origin: 50% 50%;
+  perspective-origin: 50% 50%;
+  -webkit-transition  : -webkit-transform .5s, top .15s linear, left .15s linear;
+  -moz-transition     : -moz-transform .5s, top .15s linear, left .15s linear;
+  -o-transition       : -o-transform .5s, top .15s linear, left .15s linear;
+  -ms-transition      : -ms-transform .5s, top .15s linear, left .15s linear;
+  transition          : transform .5s, top .15s linear, left .15s linear;
 
+  -webkit-transform-style : preserve-3d;
+  -moz-transform-style    : preserve-3d;
+  -o-transform-style      : preserve-3d;
+  -ms-transform-style     : preserve-3d;
+  transform-style         : preserve-3d;
 }
 
 @-moz-keyframes spinningH {
@@ -91,12 +137,13 @@ height:100%;
   margin: 0 auto;
   height: 100px;
   width: 100px;
+  pointer-events:none;
 
-  -webkit-transition  : -webkit-transform .1s, top .15s linear, left .15s linear;
-  -moz-transition     : -moz-transform .1s, top .15s linear, left .15s linear;
-  -o-transition       : -o-transform .1s, top .15s linear, left .15s linear;
-  -ms-transition      : -ms-transform .1s, top .15s linear, left .15s linear;
-  transition          : transform .1s, top .15s linear, left .15s linear;
+  -webkit-transition  : -webkit-transform .5s, top .15s linear, left .15s linear;
+  -moz-transition     : -moz-transform .5s, top .15s linear, left .15s linear;
+  -o-transition       : -o-transform .5s, top .15s linear, left .15s linear;
+  -ms-transition      : -ms-transform .5s, top .15s linear, left .15s linear;
+  transition          : transform .5s, top .15s linear, left .15s linear;
 
   -webkit-transform-style : preserve-3d;
   -moz-transform-style    : preserve-3d;

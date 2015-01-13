@@ -39,6 +39,7 @@ define(function () {
         console.log(JSON.stringify(this, null, 4));
         return this;
       };
+
     },
 
     Components : {
@@ -58,6 +59,12 @@ define(function () {
         this.x = x;
         this.y = y;
         this.z = z;
+        return this;
+      },
+      Velocity : function() {
+        this.name = 'Velocity';
+        this.dX = 0;
+        this.dY = 0;
         return this;
       },
       PlayerControlled : function(player) {
@@ -80,9 +87,10 @@ define(function () {
         this.DOMReference = "undefined";
         return this;
       },
-      Collides : function() {
+      Collides : function(permeability) {
         this.name = "Collides";
         this.damage = 0;
+        this.permeability = permeability;
         return this;
       },
       RandomWalker : function(stepSize) {
@@ -111,6 +119,8 @@ define(function () {
       },
       Map : function() {
         this.name = "Map";
+        this.type = "Dungeon";
+        this.followPlayer = true;
         return this;
       }
     },
@@ -154,7 +164,7 @@ define(function () {
             }
           }
           if(typeof currentEntity.components.Map != "undefined") {
-            $('#map').attr('data-entity', currentEntity.id)
+            $('#map').attr('data-entity', currentEntity.id);
           }
         }
       },
@@ -190,15 +200,21 @@ define(function () {
         for(var i = 0; i < entities.length; i++) {
           currentEntity = entities[i];
           if(typeof currentEntity.components.PlayerControlled != "undefined") {
-            currentEntity.components.Position.x = window.userInputX;
-            currentEntity.components.Position.y = window.userInputY;
-            currentEntity.components.Position.z = window.userInputZ;
-          } else if(typeof currentEntity.components.Map != "undefined") {
-            currentEntity.components.Position.x = -window.userInputX;
-            currentEntity.components.Position.y = -window.userInputY;
-            currentEntity.components.Position.z = window.userInputZ;
+            currentEntity.components.Position.x+=window.userInputX;
+            currentEntity.components.Position.y+=window.userInputY;
+            currentEntity.components.Position.z+=window.userInputZ;
+          }
+
+          if(typeof currentEntity.components.Map != "undefined") {
+            if(currentEntity.components.Map.followPlayer == true) {
+              currentEntity.components.Position.x = -ECS.Entities.Player.components.Position.x;
+              currentEntity.components.Position.y = -ECS.Entities.Player.components.Position.y;
+              currentEntity.components.Position.z-=window.userInputZ;
+            }
+
           }
         }
+        window.userInputX = window.userInputY = window.userInputZ = 0;
       },
 
       collisionDetection : function(entities) {
@@ -212,7 +228,7 @@ define(function () {
 
             for(var j = 0; j < entities.length; j++){
               otherEntity = entities[j];
-              if(typeof otherEntity.components.Collides != "undefined" && typeof currentEntity.components.Collides != "undefined" && otherEntity.id != currentEntity.id){
+              if(typeof otherEntity.components.Collides != "undefined" && otherEntity.id != currentEntity.id){
                 var xDist = Math.abs(currentEntity.components.Position.x - otherEntity.components.Position.x);
                 var yDist = Math.abs(currentEntity.components.Position.y - otherEntity.components.Position.y);
                 if(xDist < 100 && yDist < 100) {
@@ -220,13 +236,17 @@ define(function () {
                     $(window).trigger('playerCollision', [currentEntity]);
                   }
                   if(currentEntity.id != ECS.Entities.Player.id) {
-                    //We only trigger the collision event when both the system's X & Y positions and the CSS positions are colliding
-                    cssPos1 = ECS.Utilities.FindElementDocumentPosition($('[data-entity="'+currentEntity.id+'"]'));
-                    cssPos2 = ECS.Utilities.FindElementDocumentPosition($('[data-entity="'+otherEntity.id+'"]'));
-                    var xCssDist = Math.abs(cssPos1.left - cssPos2.left);
-                    var yCssDist = Math.abs(cssPos1.top - cssPos2.top);
-                    if(xCssDist < 100 && yCssDist < 100) {
-                      $(window).trigger('collision', [otherEntity, currentEntity]);
+                    //We dont trigger a collision if both elements are projectiles
+                    if (typeof currentEntity.components.Projectile == "undefined" || typeof otherEntity.components.Projectile == "undefined") {
+                      //We only trigger the collision event when both the system's X & Y positions and the CSS positions are colliding
+                      cssPos1 = ECS.Utilities.FindElementDocumentPosition($('[data-entity="'+currentEntity.id+'"]'));
+                      cssPos2 = ECS.Utilities.FindElementDocumentPosition($('[data-entity="'+otherEntity.id+'"]'));
+                      var xCssDist = Math.abs(cssPos1.left - cssPos2.left);
+                      var yCssDist = Math.abs(cssPos1.top - cssPos2.top);
+                      if(xCssDist < 100 && yCssDist < 100) {
+                        $(window).trigger('collision', [otherEntity, currentEntity]);
+                      }
+
                     }
 
                   }
@@ -243,7 +263,7 @@ define(function () {
 
       randomWalking : function(entities) {
           //Adds a random X and a random Y value to the position of any entity with the RandomWalker component
-          //Doesn't let it walk out of bounds
+          //The dude walks around all crazy, the paramenter defined in the component is basically his speed. Doesn't let it walk out of bounds
           var currentEntity;
           for(var i = 0; i < entities.length; i++) {
             currentEntity = entities[i];
@@ -264,6 +284,27 @@ define(function () {
 
       playerImpact: function(evt, collidedWithEntity) {
         console.log('Player Entity: ' + ECS.Entities.Player.id, 'Collided with Entity: ' + collidedWithEntity.id);
+
+        if(typeof collidedWithEntity.components.Collides != "undefined") {
+          if(collidedWithEntity.components.Collides.permeability == 0 && ECS.Entities.Player.components.Collides.permeability == 0) {
+            var playerX = ECS.Entities.Player.components.Position.x;
+            var playerY = ECS.Entities.Player.components.Position.y;
+            var collX = collidedWithEntity.components.Position.x;
+            var collY = collidedWithEntity.components.Position.y;
+            if(playerY < collY) {
+              ECS.Entities.Player.components.Position.y = ECS.Entities.Player.components.Position.y - 30;
+            } else {
+              ECS.Entities.Player.components.Position.y = ECS.Entities.Player.components.Position.y + 30;
+            }
+            if(playerX < collX) {
+              ECS.Entities.Player.components.Position.x = ECS.Entities.Player.components.Position.x - 30;
+            } else {
+              ECS.Entities.Player.components.Position.x = ECS.Entities.Player.components.Position.x + 30;
+            }
+
+          }
+        }
+
         if(typeof collidedWithEntity.components.Coin != "undefined") {
           ECS.Entities.Player.components.Health.value+=collidedWithEntity.components.Coin.value;
           $('[data-entity="'+collidedWithEntity.id+'"]').remove();

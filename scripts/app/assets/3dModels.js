@@ -10,6 +10,11 @@ define(function () {
       return this;
     },
 
+    cssSorcerer : function() {
+      this.modelData = '<div class="sorcerer" data-entity=""></div>';
+      return this;
+    },
+
     cssBullet : function() {
       this.modelData = '<div class="bullet"></div>';
       return this;
