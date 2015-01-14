@@ -54,6 +54,11 @@ define(function () {
         this.multiplier = multiplier;
         return this;
       },
+      Size: function(size) {
+        this.name = 'Size';
+        this.size = size;
+        return this;
+      },
       Position : function(x,y,z) {
         this.name = 'Position';
         this.x = x;
@@ -121,6 +126,18 @@ define(function () {
         this.name = "Map";
         this.type = "Dungeon";
         this.followPlayer = true;
+        this.mapMatrix = {
+          1: [0,0,1,0,0,0,1,1,0,0,1],
+          2: [0,0,1,0,0,0,1,0,1,0,1],
+          3: [0,0,1,0,0,0,1,0,1,0,1],
+          4: [0,0,1,0,0,0,1,0,1,0,1],
+          5: [0,0,1,0,0,0,1,0,1,0,1],
+          6: [0,0,1,0,0,0,1,0,1,0,1],
+          7: [0,0,1,0,0,0,1,0,1,0,1],
+          8: [0,0,1,0,0,0,1,0,1,0,1],
+          9: [0,0,1,0,0,0,1,0,1,0,1],
+          10:[0,0,0,0,0,0,1,0,1,0,1],
+        }
         return this;
       }
     },
@@ -160,6 +177,13 @@ define(function () {
               var type = currentEntity.components.CSSModel.type;
                 el = $(currentEntity.components.CSSModel.model);
                 el.attr('data-entity', currentEntity.id);
+                el.css('width', currentEntity.components.Size.size + 'px')
+                el.css({
+                  width: currentEntity.components.Size.size + 'px',
+                  height: currentEntity.components.Size.size + 'px',
+                  left: -currentEntity.components.Size.size/2.2 + 'px',
+                  top: -currentEntity.components.Size.size/2.2 + 'px'
+                })
                 $('#map').append(el);
             }
           }
@@ -169,7 +193,49 @@ define(function () {
         }
       },
 
+      buildMap : function(entities) {
+        var map = $('#map');
+        var currentEntity;
+        var mapMatrix;
+        for(var i = 0; i < entities.length; i++) {
+          currentEntity = entities[i];
+          //type might be dungeon.  We will add a path through the dungeon and the collideable obstacles into the world.  ie. walls, rivers, terrain, etc.
+          if(typeof currentEntity.components.Map != "undefined") {
+            fullMapMatrix = currentEntity.components.Map.mapMatrix;
+            for(var x = 1; x < 11 ;x++){
+            var mapMatrixRow = fullMapMatrix[x];
+            var obstacle;
+            var obstacleXLocation;
+            var obstacleYLocation;
+            var obstacleEntityCollection = [];
+            var mapMatrixN = mapMatrixRow.length;
+            var mapMatrixSectionWidth = map.width()/mapMatrixN;
+            var mapMatrixSectionHeight = map.height()/11;
+            console.log(mapMatrixSectionHeight)
+            for(var n = 0; n < mapMatrixN; n++){
+              obstacle = mapMatrixRow[n];
+              obstacleXLocation = n * mapMatrixSectionWidth;
+              if(obstacle == 1) {
+                //map.append('<div style="position:fixed; width:200px; height:200px; background:#000; top:0; left:'+obstacleXLocation+'px;"></div>');
+                obstacleEntityCollection[n] = new ECS.APP.Entity();
+                obstacleEntityCollection[n].addComponent(new ECS.APP.Components.Collides(false));
+                obstacleEntityCollection[n].addComponent(new ECS.APP.Components.Size(mapMatrixSectionWidth));
+                obstacleEntityCollection[n].addComponent(new ECS.APP.Components.Position(obstacleXLocation, mapMatrixSectionHeight*x, 1));
+                //obstacleEntityCollection[n].print();
+                var cssModel = ECS.Models.cssCube();
+                cssModel.modelData = '<div style="position:fixed; z-index:0; height:'+mapMatrixSectionWidth+'px; background:#000;pointer-events:none;"></div>'
+                obstacleEntityCollection[n].addComponent(new ECS.APP.Components.CSSModel(cssModel));
+                entityArray.push(obstacleEntityCollection[n]);
+              }
+            }
+          }
+
+          }
+        }
+      },
+
       positionCSSModel : function(entities) {
+        var currentEntity;
         for(var i = 0; i < entities.length; i++) {
           currentEntity = entities[i];
           if(typeof currentEntity.components.CSSModel != "undefined") {
@@ -231,7 +297,7 @@ define(function () {
               if(typeof otherEntity.components.Collides != "undefined" && otherEntity.id != currentEntity.id){
                 var xDist = Math.abs(currentEntity.components.Position.x - otherEntity.components.Position.x);
                 var yDist = Math.abs(currentEntity.components.Position.y - otherEntity.components.Position.y);
-                if(xDist < 100 && yDist < 100) {
+                if(xDist < currentEntity.components.Size.size/1.5 && yDist < currentEntity.components.Size.size/1.5) {
                   if(otherEntity.id == ECS.Entities.Player.id) {
                     $(window).trigger('playerCollision', [currentEntity]);
                   }
@@ -243,7 +309,8 @@ define(function () {
                       cssPos2 = ECS.Utilities.FindElementDocumentPosition($('[data-entity="'+otherEntity.id+'"]'));
                       var xCssDist = Math.abs(cssPos1.left - cssPos2.left);
                       var yCssDist = Math.abs(cssPos1.top - cssPos2.top);
-                      if(xCssDist < 100 && yCssDist < 100) {
+                      if(xCssDist < currentEntity.components.Size.size/1.5 && yCssDist < currentEntity.components.Size.size/1.5) {
+                        //console.log(currentEntity)
                         $(window).trigger('collision', [otherEntity, currentEntity]);
                       }
 
@@ -283,7 +350,6 @@ define(function () {
       },
 
       playerImpact: function(evt, collidedWithEntity) {
-        console.log('Player Entity: ' + ECS.Entities.Player.id, 'Collided with Entity: ' + collidedWithEntity.id);
 
         if(typeof collidedWithEntity.components.Collides != "undefined") {
           if(collidedWithEntity.components.Collides.permeability == 0 && ECS.Entities.Player.components.Collides.permeability == 0) {
@@ -315,7 +381,6 @@ define(function () {
           ECS.Entities.Player.components.Health.value-=1;
           collidedWithEntity.components = {};
         }
-        console.log('Health: ' + ECS.Entities.Player.components.Health.value)
         ECS.UI.updatePlayerHealth(ECS.Entities.Player.components.Health.value);
       },
 
@@ -326,14 +391,31 @@ define(function () {
           $('[data-entity="'+entity1.id+'"]').html(currentEntity.components.Projectile.impactAnimation);
 
           if(typeof entity2.components.Health != "undefined") {
-            //console.log(entity1.components.Projectile.damage)
             entity2.components.Health.value-=entity1.components.Projectile.damage;
             entity1.components = {};
             setTimeout(function() {
               $('[data-entity="'+entity1.id+'"]').remove();
             }, 200)
             ECS.UI.updateEntityHealth(entity2);
-            console.log(entity2.components.Health.value)
+          }
+        }
+        //we dont want to bounce projectiles off of things.
+        if(typeof entity1.components.Projectile == "undefined" && typeof entity2.components.Projectile == "undefined") {
+          if(typeof entity1.components.RandomWalker != "undefined") {
+            var entity1X = entity1.components.Position.x;
+            var entity1Y = entity1.components.Position.y;
+            var entity2X = entity2.components.Position.x;
+            var entity2Y = entity2.components.Position.y;
+            if(entity1Y < entity2Y) {
+              entity1.components.Position.y = entity1.components.Position.y - 30;
+            } else {
+              entity1.components.Position.y = entity1.components.Position.y + 30;
+            }
+            if(entity1X < entity2X) {
+              entity1.components.Position.x = entity1.components.Position.x - 30;
+            } else {
+              entity1.components.Position.x = entity1.components.Position.x + 30;
+            }
           }
         }
       },
@@ -356,6 +438,7 @@ define(function () {
         projectile.addComponent(new ECS.APP.Components.Position(attackingEntity.components.Position.x + 120, attackingEntity.components.Position.y + 120, 1));
         projectile.addComponent(new ECS.APP.Components.CSSModel(ECS.Models.cssBullet()));
         projectile.addComponent(new ECS.APP.Components.Collides());
+        projectile.addComponent(new ECS.APP.Components.Size(20));
         if(attackingEntity.id == ECS.Entities.Player.id) {
 
           originX = attackingEntity.components.Position.x;

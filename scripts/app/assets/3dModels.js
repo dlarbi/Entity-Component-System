@@ -5,6 +5,16 @@ define(function () {
       return this;
     },
 
+    cssBigBuilding : function() {
+      this.modelData = '<div id="tallBuilding" class="" data-entity=""><div></div><div></div><div></div><div></div><div></div><div></div><div id="health"></div></div>';
+      return this;
+    },
+
+    cssTallBuilding: function() {
+      this.modelData = '<div class="wrapper"><div class="side1"></div><div class="side2"></div><div class="side3"></div><div class="side4"></div><div class="side5"></div></div>';
+      return this;
+    },
+
     cssCoin : function() {
       this.modelData = '<div id="coin" class="animate" data-entity=""></div>';
       return this;

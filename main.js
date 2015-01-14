@@ -13,7 +13,7 @@ require(["helper/util","app/ecs", "app/observers", "assets/3dModels", "app/UI"],
   APP.initialize(APP, Models, UI, Utilities);
   var player = new APP.Entity();
   var enemy = new APP.Entity();
-  var enemy2 = new APP.Entity();
+  var building = new APP.Entity();
 
   var map = new APP.Entity();
   map.addComponent(new APP.Components.Position(1, 2, 1));
@@ -21,6 +21,7 @@ require(["helper/util","app/ecs", "app/observers", "assets/3dModels", "app/UI"],
   map.addComponent(new APP.Components.CSSModel({modelData : ''}));
 
   player.addComponent(new APP.Components.Health());
+  player.addComponent(new APP.Components.Size(100));
   player.addComponent(new APP.Components.Position(20, 20, 1));
   player.addComponent(new APP.Components.PlayerControlled(player));
   player.addComponent(new APP.Components.CSSModel(Models.cssCube()));
@@ -28,6 +29,7 @@ require(["helper/util","app/ecs", "app/observers", "assets/3dModels", "app/UI"],
   player.addComponent(new APP.Components.Collides(0));
 
   enemy.addComponent(new APP.Components.Health());
+  enemy.addComponent(new APP.Components.Size(100));
   enemy.addComponent(new APP.Components.Position(600, 300, 1));
   enemy.addComponent(new APP.Components.CSSModel(Models.cssCube()));
   enemy.addComponent(new APP.Components.Collides(0));
@@ -35,18 +37,22 @@ require(["helper/util","app/ecs", "app/observers", "assets/3dModels", "app/UI"],
 
   var coin = new APP.Entity();
   coin.addComponent(new APP.Components.Position(100, 200, 1));
+  coin.addComponent(new APP.Components.Size(50));
   coin.addComponent(new APP.Components.CSSModel(Models.cssCoin()));
   coin.addComponent(new APP.Components.Collides(1));
   coin.addComponent(new APP.Components.Coin());
 
-  enemy2.addComponent(new APP.Components.Health());
-  enemy2.addComponent(new APP.Components.Position(900, 300, 1));
-  enemy2.addComponent(new APP.Components.CSSModel(Models.cssCube()));
-  enemy2.addComponent(new APP.Components.Collides(0));
+  //Add/Remove health component from building to make the building destroyable. Same way as an enemy.
+  //Sweet example of this architecture's awesome ability to maintain separation of concerns.
+  building.addComponent(new APP.Components.Health());
+  building.addComponent(new APP.Components.Size(400));
+  building.addComponent(new APP.Components.Position(1600, 300, 1));
+  building.addComponent(new APP.Components.CSSModel(Models.cssBigBuilding()));
+  building.addComponent(new APP.Components.Collides(0));
   //enemy2.addComponent(new APP.Components.Attacker()); //We pass APP  and models so we can create new entities and components for bullets/arrows/etc within our attack methods
 
-  window.entityArray = [map, player, enemy, coin, enemy2];
-
+  window.entityArray = [map, player, enemy, coin, building];
+  APP.Systems.buildMap(entityArray);
   APP.Systems.renderCSSModel(entityArray); //We render CSS models once, outside of game loop.  Only update positions and rotations in game loop.
 
   //We handle impacts by observing collision events with the player object.
