@@ -299,7 +299,13 @@ define(function () {
                 var yDist = Math.abs(currentEntity.components.Position.y - otherEntity.components.Position.y);
                 if(xDist < currentEntity.components.Size.size/1.5 && yDist < currentEntity.components.Size.size/1.5) {
                   if(otherEntity.id == ECS.Entities.Player.id) {
-                    $(window).trigger('playerCollision', [currentEntity]);
+                    cssPos1 = ECS.Utilities.FindElementDocumentPosition($('[data-entity="'+ECS.Entities.Player.id+'"]'));
+                    cssPos2 = ECS.Utilities.FindElementDocumentPosition($('[data-entity="'+otherEntity.id+'"]'));
+                    var xCssDist = Math.abs(cssPos1.left - cssPos2.left);
+                    var yCssDist = Math.abs(cssPos1.top - cssPos2.top);
+                    if(xCssDist < currentEntity.components.Size.size/1.5 && yCssDist < currentEntity.components.Size.size/1.5) {
+                      $(window).trigger('playerCollision', [currentEntity]);
+                    }
                   }
                   if(currentEntity.id != ECS.Entities.Player.id) {
                     //We dont trigger a collision if both elements are projectiles
@@ -434,30 +440,38 @@ define(function () {
       },
 
       attack: function(evt, attackingEntity) {
+
+          var projectile = new ECS.APP.Entity();
+          projectile.addComponent(new ECS.APP.Components.Position(attackingEntity.components.Position.x + 120, attackingEntity.components.Position.y + 120, 1));
+          projectile.addComponent(new ECS.APP.Components.CSSModel(ECS.Models.cssBullet()));
+          projectile.addComponent(new ECS.APP.Components.Collides());
+          projectile.addComponent(new ECS.APP.Components.Size(20));
+          projectile.addComponent(new ECS.APP.Components.Projectile(ECS.Entities.Player.components.Position.x, ECS.Entities.Player.components.Position.y));
+
+
+        window.entityArray.push(projectile)
+        ECS.APP.Systems.renderCSSModel(entityArray);
+      },
+
+      playerAttack : function(evt, attackingEntity) {
         var projectile = new ECS.APP.Entity();
         projectile.addComponent(new ECS.APP.Components.Position(attackingEntity.components.Position.x + 120, attackingEntity.components.Position.y + 120, 1));
         projectile.addComponent(new ECS.APP.Components.CSSModel(ECS.Models.cssBullet()));
         projectile.addComponent(new ECS.APP.Components.Collides());
         projectile.addComponent(new ECS.APP.Components.Size(20));
-        if(attackingEntity.id == ECS.Entities.Player.id) {
+        originX = attackingEntity.components.Position.x;
+        originY = attackingEntity.components.Position.y;
+        destinationX = window.clickX;
+        destinationY = window.clickY;
 
-          originX = attackingEntity.components.Position.x;
-          originY = attackingEntity.components.Position.y;
-          destinationX = window.clickX;
-          destinationY = window.clickY;
+        var difsquaredX = (destinationX - originX)*(destinationX - originX);
+        var difsquaredY = (destinationY - originY)*(destinationY - originY);
 
-          var difsquaredX = (destinationX - originX)*(destinationX - originX);
-          var difsquaredY = (destinationY - originY)*(destinationY - originY);
+        var amp = Math.sqrt(difsquaredX + difsquaredY);
 
-          var amp = Math.sqrt(difsquaredX + difsquaredY);
-
-          projectile.addComponent(new ECS.APP.Components.Projectile(window.clickX, window.clickY));
-          window.clickX = 0;
-          window.clickY = 0;
-        } else {
-          projectile.addComponent(new ECS.APP.Components.Projectile(ECS.Entities.Player.components.Position.x, ECS.Entities.Player.components.Position.y));
-        }
-
+        projectile.addComponent(new ECS.APP.Components.Projectile(window.clickX, window.clickY));
+        window.clickX = 0;
+        window.clickY = 0;
         window.entityArray.push(projectile)
         ECS.APP.Systems.renderCSSModel(entityArray);
       },
@@ -469,7 +483,7 @@ define(function () {
           if(typeof currentEntity.components.Attacker != "undefined") {
             if(typeof currentEntity.components.PlayerControlled != "undefined"){
               if(window.userInputLClick == 1) {
-                $(window).trigger('attack', [currentEntity]);
+                $(window).trigger('playerAttack', [currentEntity]);
                 window.userInputLClick = 0;
               }
             } else {

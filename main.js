@@ -49,7 +49,7 @@ require(["helper/util","app/ecs", "app/observers", "assets/3dModels", "app/UI"],
   building.addComponent(new APP.Components.Position(1600, 300, 1));
   building.addComponent(new APP.Components.CSSModel(Models.cssBigBuilding()));
   building.addComponent(new APP.Components.Collides(0));
-  //enemy2.addComponent(new APP.Components.Attacker()); //We pass APP  and models so we can create new entities and components for bullets/arrows/etc within our attack methods
+  enemy.addComponent(new APP.Components.Attacker()); //We pass APP  and models so we can create new entities and components for bullets/arrows/etc within our attack methods
 
   window.entityArray = [map, player, enemy, coin, building];
   APP.Systems.buildMap(entityArray);
